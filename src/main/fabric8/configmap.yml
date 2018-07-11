@@ -1,0 +1,13 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  # Must match the 'spring.application.name' property of the application
+  name: camel-config
+data:
+  application.properties: |
+    # Override the configuration properties here
+    jdbc.username=fuseignite
+    jdbc.password=Abcd1234
+    jdbc.hostname=bobdb.cmewc0zj50un.us-east-1.rds.amazonaws.com
+    jdbc.port=5432
+    jdbc.dbName=leaddb

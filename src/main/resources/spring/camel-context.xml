@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Configures the Camel Context -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:camel-cxf="http://camel.apache.org/schema/cxf"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="             http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd             http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd     http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd">
+    <bean class="org.apache.commons.dbcp.BasicDataSource"
+        destroy-method="close" id="dataSource">
+        <property name="driverClassName" value="org.postgresql.Driver"/>
+        <property name="url" value="jdbc:postgresql://${jdbc.hostname}:${jdbc.port}/${jdbc.dbName}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+    <bean class="org.apache.camel.component.sql.SqlComponent" id="sql">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <camelContext id="_camelContext1"
+        xmlns="http://camel.apache.org/schema/spring" xmlns:order="http://fabric8.com/examples/order/v7">
+        <dataFormats>
+            <json id="organization" library="Jackson" unmarshalTypeName="com.example.rest.Organization"/>
+        </dataFormats>
+        <restConfiguration apiContextPath="/api-doc" bindingMode="json"
+            component="servlet" contextPath="/api" enableCORS="true">
+            <dataFormatProperty key="prettyPrint" value="true"/>
+            <apiProperty key="host" value=""/>
+            <apiProperty key="api.version" value="1.0.0"/>
+            <apiProperty key="api.title" value="RDS Lead REST service"/>
+            <apiProperty key="api.description" value="Camel Rest Example with Swagger that provides a RDS Lead lookup service"/>
+            <apiProperty key="api.contact.name" value="Simon Green"/>
+        </restConfiguration>
+        <!-- defines the rest services using the context-path /organization -->
+        <rest consumes="application/json" path="/leadSearch" produces="application/json">
+            <description>Lead rest service</description>
+            <!-- this is a rest GET to view an organization by the given id -->
+            <!--             <get outType="com.example.rest.Organization" uri="/{id}"> -->
+            <!--                 <description>Find organization by ord_id</description> -->
+            <!--                 <to uri="direct:orgById"/> -->
+            <!--             </get> -->
+            <!-- this is a rest GET to view paginated results using a partial organization name -->
+            <!--             <get outType="com.example.rest.Organization" uri="/{partialOrgName}/{pageNumber}/{pageSize}"> -->
+            <!--                 <description>Find organization by partial organization name and then return paginated results</description> -->
+            <!--                 <to uri="direct:paginate"/> -->
+            <!--             </get> -->
+            <!-- this is a rest PUT to create/update an Organization -->
+            <!--             <put type="com.example.rest.Organization"> -->
+            <!--                 <description>Updates or create an organization</description> -->
+            <!--                 <to uri="direct:putOrganization"/> -->
+            <!--             </put> -->
+            <!-- this is a rest GET to find all organizations -->
+            <get outType="com.example.rest.Lead[]" uri="/findAll">
+                <description>Find all Leads</description>
+                <to uri="direct:findAll"/>
+            </get>
+        </rest>
+        <!--         <route id="putOrganization"> -->
+        <!--             <from id="_from2" uri="direct:putOrganization"/> -->
+        <!--             <setHeader headerName="org_id" id="_setHeader1"> -->
+        <!--                 <simple>${body.org_id}</simple> -->
+        <!--             </setHeader> -->
+        <!--             <setHeader headerName="org_name" id="_setHeader2"> -->
+        <!--                 <simple>${body.org_name}</simple> -->
+        <!--             </setHeader> -->
+        <!--             <to id="_to2" uri="sql:select org_id, org_name from organization where org_id=:#org_id"/> -->
+        <!--             <choice id="_choice1"> -->
+        <!--                 <when id="_when1"> -->
+        <!--                     <simple>${header.CamelSqlRowCount} &gt; 0</simple> -->
+        <!--                     <to id="_to3" uri="sql:update organization set org_name=:#org_name where org_id=:#org_id"/> -->
+        <!--                 </when> -->
+        <!--                 <otherwise id="_otherwise1"> -->
+        <!--                     <to id="_to4" uri="sql:insert INTO organization (org_id, org_name) VALUES (:#org_id,:#org_name )"/> -->
+        <!--                 </otherwise> -->
+        <!--             </choice> -->
+        <!--             <to id="_to5" uri="sql:select org_id, org_name from organization where org_id=:#org_id"/> -->
+        <!--             <setHeader headerName="node" id="_setHeader3"> -->
+        <!--                 <constant>1</constant> -->
+        <!--             </setHeader> -->
+        <!--         </route> -->
+        <!--         <route id="paginate"> -->
+        <!--             <from id="_from3" uri="direct:paginate"/> -->
+        <!--             <setHeader headerName="partialOrgNameWildcard" id="_setHeader4"> -->
+        <!--                 <simple>%${header.partialOrgName}%</simple> -->
+        <!--             </setHeader> -->
+        <!--             <to id="_to6" uri="sql:select org_id, org_name from organization where org_name like :#partialOrgNameWildcard offset :#pageNumber rows fetch first :#pageSize rows only"/> -->
+        <!--             <setHeader headerName="node" id="_setHeader5"> -->
+        <!--                 <constant>1</constant> -->
+        <!--             </setHeader> -->
+        <!--         </route> -->
+        <!--         <route id="orgById"> -->
+        <!--             <from id="_from4" uri="direct:orgById"/> -->
+        <!--             <to id="_to7" uri="sql:select org_id, org_name from organization where org_id=:#id"/> -->
+        <!--             <setHeader headerName="node" id="_setHeader6"> -->
+        <!--                 <constant>1</constant> -->
+        <!--             </setHeader> -->
+        <!--         </route> -->
+        <route id="findAll">
+            <from id="_from5" uri="direct:findAll"/>
+            <to id="_to8" uri="sql:select * from public.leads"/>
+            <setHeader headerName="node" id="_setHeader7">
+                <constant>1</constant>
+            </setHeader>
+        </route>
+    </camelContext>
+</beans>
